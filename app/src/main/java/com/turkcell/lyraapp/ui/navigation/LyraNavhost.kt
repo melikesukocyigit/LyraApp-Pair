@@ -1,0 +1,126 @@
+package com.turkcell.lyraapp.ui.navigation
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.turkcell.lyraapp.ui.auth.login.LoginRoute
+import com.turkcell.lyraapp.ui.auth.register.RegisterRoute
+import com.turkcell.lyraapp.ui.home.HomeRoute
+import com.turkcell.lyraapp.ui.search.SearchRoute
+
+@Composable
+fun LyraNavHost(
+    isLoggedIn: Boolean,
+    onThemeToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+    navController: NavHostController = rememberNavController(),
+) {
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+
+    val startRoute = if (isLoggedIn) LyraDestination.Home.route else LyraDestination.Login.route
+
+    Scaffold(
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        bottomBar = {
+            if (isTopLevelRoute(currentRoute)) {
+                LyraBottomBar(
+                    currentRoute = currentRoute,
+                    onTabSelected = navController::navigateToTab,
+                )
+            }
+        },
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = startRoute,
+            modifier = Modifier.padding(innerPadding),
+        ) {
+            composable(LyraDestination.Login.route) {
+                LoginRoute(
+                    onNavigateToHome = { navController.navigateToHomeClearingAuth() },
+                    onNavigateToRegister = {
+                        navController.navigate(LyraDestination.Register.route) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
+            }
+
+            composable(LyraDestination.Register.route) {
+                RegisterRoute(
+                    onNavigateToLogin = {
+                        navController.navigate(LyraDestination.Login.route) {
+                            popUpTo(LyraDestination.Login.route) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    },
+                    onNavigateBack = { navController.popBackStack() },
+                )
+            }
+
+            composable(LyraDestination.Home.route) {
+                HomeRoute(
+                    onNavigateToLogin = {
+                        navController.navigate(LyraDestination.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    onToggleTheme = onThemeToggle
+                )
+            }
+
+            composable(LyraDestination.Search.route) { SearchRoute() }
+            composable(LyraDestination.Library.route) { PlaceholderScreen(title = "Kütüphane") }
+            composable(LyraDestination.Favorites.route) { PlaceholderScreen(title = "Favoriler") }
+            composable(LyraDestination.Profile.route) { PlaceholderScreen(title = "Profil") }
+        }
+    }
+}
+
+private fun NavHostController.navigateToTab(destination: LyraDestination) {
+    navigate(destination.route) {
+        popUpTo(LyraDestination.Home.route) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
+
+private fun NavHostController.navigateToHomeClearingAuth() {
+    navigate(LyraDestination.Home.route) {
+        popUpTo(LyraDestination.Login.route) { inclusive = true }
+        launchSingleTop = true
+    }
+}
+
+@Composable
+private fun PlaceholderScreen(
+    title: String,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
