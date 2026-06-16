@@ -12,6 +12,9 @@ class InMemoryPlayerRepository @Inject constructor() : PlayerRepository {
     private val _currentTrack = MutableStateFlow<NowPlayingTrack?>(null)
     override val currentTrack: StateFlow<NowPlayingTrack?> = _currentTrack.asStateFlow()
 
+    private val _isPlaying = MutableStateFlow(false)
+    override val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
+
     private var queue: List<NowPlayingTrack> = emptyList()
     private var currentIndex: Int = -1
 
@@ -19,12 +22,18 @@ class InMemoryPlayerRepository @Inject constructor() : PlayerRepository {
         queue = listOf(track)
         currentIndex = 0
         _currentTrack.value = track
+        _isPlaying.value = true
     }
 
     override fun playQueue(tracks: List<NowPlayingTrack>, startIndex: Int) {
         queue = tracks
         currentIndex = startIndex.coerceIn(0, tracks.lastIndex)
         _currentTrack.value = queue[currentIndex]
+        _isPlaying.value = true
+    }
+
+    override fun togglePlayPause() {
+        _isPlaying.value = !_isPlaying.value
     }
 
     override fun skipNext() {
