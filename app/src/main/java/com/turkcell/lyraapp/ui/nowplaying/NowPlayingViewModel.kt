@@ -36,11 +36,16 @@ class NowPlayingViewModel @Inject constructor(
                 }
             }
         }
+        viewModelScope.launch {
+            playerRepository.isPlaying.collect { playing ->
+                _uiState.update { it.copy(isPlaying = playing) }
+            }
+        }
     }
 
     fun onIntent(intent: NowPlayingIntent) {
         when (intent) {
-            is NowPlayingIntent.TogglePlayPause -> _uiState.update { it.copy(isPlaying = !it.isPlaying) }
+            is NowPlayingIntent.TogglePlayPause -> playerRepository.togglePlayPause()
             is NowPlayingIntent.ToggleFavorite -> _uiState.update { it.copy(isFavorited = !it.isFavorited) }
             is NowPlayingIntent.ToggleShuffle -> _uiState.update { it.copy(isShuffling = !it.isShuffling) }
             is NowPlayingIntent.ToggleRepeat -> _uiState.update { it.copy(isRepeating = !it.isRepeating) }

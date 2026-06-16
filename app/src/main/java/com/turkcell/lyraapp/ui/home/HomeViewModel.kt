@@ -1,5 +1,8 @@
 package com.turkcell.lyraapp.ui.home
 
+import android.content.Context
+import android.content.Intent
+import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.turkcell.lyraapp.data.auth.AuthRepository
@@ -7,7 +10,9 @@ import com.turkcell.lyraapp.data.home.HomeRepository
 import com.turkcell.lyraapp.data.player.NowPlayingTrack
 import com.turkcell.lyraapp.data.player.PlayerRepository
 import com.turkcell.lyraapp.data.theme.ThemeRepository
+import com.turkcell.lyraapp.service.MediaPlayerService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +26,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val homeRepository: HomeRepository,
     private val authRepository: AuthRepository,
     private val themeRepository: ThemeRepository,
@@ -108,7 +114,17 @@ class HomeViewModel @Inject constructor(
     private fun playTrack(track: NowPlayingTrack, queue: List<NowPlayingTrack>) {
         val startIndex = queue.indexOfFirst { it.id == track.id }.coerceAtLeast(0)
         playerRepository.playQueue(queue, startIndex)
+        startMediaService()
         viewModelScope.launch { _effect.send(HomeEffect.NavigateToNowPlaying) }
+    }
+
+    private fun startMediaService() {
+        val intent = Intent(context, MediaPlayerService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
     }
 
     private fun logout() {
