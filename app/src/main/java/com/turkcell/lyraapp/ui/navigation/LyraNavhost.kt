@@ -23,6 +23,7 @@ import com.turkcell.lyraapp.ui.home.HomeRoute
 import com.turkcell.lyraapp.ui.library.LibraryRoute
 import com.turkcell.lyraapp.ui.library.create.NewPlaylistRoute
 import com.turkcell.lyraapp.ui.library.detail.PlaylistDetailRoute
+import com.turkcell.lyraapp.ui.profile.ProfileRoute
 import com.turkcell.lyraapp.ui.nowplaying.NowPlayingRoute
 import com.turkcell.lyraapp.ui.search.SearchRoute
 
@@ -146,7 +147,7 @@ fun LyraNavHost(
                     },
                 )
             }
-            composable(LyraDestination.Profile.route) { PlaceholderScreen(title = "Profil") }
+            composable(LyraDestination.Profile.route) { ProfileRoute() }
         }
     }
 }
