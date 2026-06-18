@@ -133,6 +133,11 @@ class HomeViewModel @Inject constructor(
                 _uiState.update { state -> state.copy(isCurrentTrackFavorited = isFav) }
             }
         }
+        viewModelScope.launch {
+            playerRepository.isPlaying.collect { playing: Boolean ->
+                _uiState.update { it.copy(isPlaying = playing) }
+            }
+        }
     }
 
     private fun playTrack(track: NowPlayingTrack, queue: List<NowPlayingTrack>) {
