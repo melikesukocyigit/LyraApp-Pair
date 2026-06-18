@@ -130,12 +130,12 @@ fun HomeScreen(
                         startColor = track.startColor,
                         endColor = track.endColor,
                         isDarkMode = state.isDarkMode,
+                        isFavorited = state.isCurrentTrackFavorited,
                         isPlaying = state.isPlaying,
-                        isFavorited = state.isFavorited,
                         onClick = { onIntent(HomeIntent.OpenNowPlaying) },
+                        onPlayPause = { onIntent(HomeIntent.TogglePlayPause) },
                         onSkipNext = { onIntent(HomeIntent.SkipNext) },
-                        onTogglePlayPause = { onIntent(HomeIntent.TogglePlayPause) },
-                        onToggleFavorite = { onIntent(HomeIntent.ToggleFavorite) },
+                        onFavoriteToggle = { onIntent(HomeIntent.ToggleFavorite) },
                         modifier = Modifier.align(Alignment.BottomCenter),
                     )
                 }
@@ -446,12 +446,12 @@ private fun MiniPlayer(
     startColor: Long,
     endColor: Long,
     isDarkMode: Boolean,
-    isPlaying: Boolean,
     isFavorited: Boolean,
+    isPlaying: Boolean,
     onClick: () -> Unit,
+    onPlayPause: () -> Unit,
     onSkipNext: () -> Unit,
-    onTogglePlayPause: () -> Unit,
-    onToggleFavorite: () -> Unit,
+    onFavoriteToggle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -501,7 +501,7 @@ private fun MiniPlayer(
                     maxLines = 1
                 )
             }
-            IconButton(onClick = onToggleFavorite) {
+            IconButton(onClick = onFavoriteToggle) {
                 Icon(
                     imageVector = if (isFavorited) LyraIcons.Favorite else LyraIcons.FavoriteOutlined,
                     contentDescription = "Favori",
@@ -509,7 +509,7 @@ private fun MiniPlayer(
                     modifier = Modifier.size(24.dp)
                 )
             }
-            IconButton(onClick = onTogglePlayPause) {
+            IconButton(onClick = onPlayPause) {
                 Icon(
                     imageVector = if (isPlaying) LyraIcons.Pause else LyraIcons.Play,
                     contentDescription = if (isPlaying) "Duraklat" else "Oynat",
