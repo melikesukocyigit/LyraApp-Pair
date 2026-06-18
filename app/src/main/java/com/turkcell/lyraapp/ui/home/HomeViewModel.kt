@@ -49,6 +49,8 @@ class HomeViewModel @Inject constructor(
                 _effect.send(HomeEffect.NavigateToNowPlaying)
             }
             is HomeIntent.SkipNext -> playerRepository.skipNext()
+            is HomeIntent.TogglePlayPause -> playerRepository.togglePlayPause()
+            is HomeIntent.ToggleFavorite -> _uiState.update { it.copy(isFavorited = !it.isFavorited) }
         }
     }
 
@@ -101,6 +103,11 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             playerRepository.currentTrack.collect { track ->
                 _uiState.update { it.copy(currentTrack = track) }
+            }
+        }
+        viewModelScope.launch {
+            playerRepository.isPlaying.collect { playing: Boolean ->
+                _uiState.update { it.copy(isPlaying = playing) }
             }
         }
     }
