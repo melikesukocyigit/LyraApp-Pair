@@ -34,7 +34,20 @@ class NowPlayingViewModel @Inject constructor(
                     state.copy(
                         track = track,
                         isFavorited = track?.let { favoritesRepository.isFavorite(it.id) } ?: false,
-                        currentPositionMs = (track?.durationMs?.times(state.progress))?.toLong() ?: 0L,
+                        currentPositionMs = 0L,
+                        progress = 0f
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
+            playerRepository.currentPositionMs.collect { positionMs ->
+                _uiState.update { state ->
+                    val duration = state.track?.durationMs ?: 0L
+                    val progress = if (duration > 0L) positionMs.toFloat() / duration.toFloat() else 0f
+                    state.copy(
+                        currentPositionMs = positionMs,
+                        progress = progress.coerceIn(0f, 1f)
                     )
                 }
             }
@@ -75,11 +88,14 @@ class NowPlayingViewModel @Inject constructor(
     }
 
     private fun seekTo(progress: Float) {
+        val duration = _uiState.value.track?.durationMs ?: 0L
+        val position = (duration * progress.coerceIn(0f, 1f)).toLong()
+        playerRepository.seekTo(position)
         _uiState.update { state ->
             val clamped = progress.coerceIn(0f, 1f)
             state.copy(
                 progress = clamped,
-                currentPositionMs = ((state.track?.durationMs ?: 0L) * clamped).toLong(),
+                currentPositionMs = position,
             )
         }
     }

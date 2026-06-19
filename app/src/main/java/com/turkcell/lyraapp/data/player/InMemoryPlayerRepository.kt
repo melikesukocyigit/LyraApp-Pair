@@ -31,13 +31,19 @@ class InMemoryPlayerRepository @Inject constructor(
     private val _isPlaying = MutableStateFlow(false)
     override val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
 
+    private val _currentPositionMs = MutableStateFlow(0L)
+    override val currentPositionMs: StateFlow<Long> = _currentPositionMs.asStateFlow()
+
     private var queue: List<NowPlayingTrack> = emptyList()
     private var currentIndex: Int = -1
 
     private var mediaPlayer: MediaPlayer? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var positionJob: kotlinx.coroutines.Job? = null
 
     private fun releasePlayer() {
+        positionJob?.cancel()
+        _currentPositionMs.value = 0L
         mediaPlayer?.let {
             it.stop()
             it.release()
@@ -73,6 +79,7 @@ class InMemoryPlayerRepository @Inject constructor(
                     setOnPreparedListener {
                         start()
                         _isPlaying.value = true
+                        startPositionTracker()
                     }
                     setOnCompletionListener {
                         skipNext()
@@ -123,11 +130,44 @@ class InMemoryPlayerRepository @Inject constructor(
             } else {
                 mp.start()
                 _isPlaying.value = true
+                startPositionTracker()
             }
         } else {
             val track = _currentTrack.value
             if (track != null) {
                 playUrl(track)
+            }
+        }
+    }
+
+    override fun seekTo(positionMs: Long) {
+        val mp = mediaPlayer
+        if (mp != null) {
+            try {
+                mp.seekTo(positionMs.toInt())
+                _currentPositionMs.value = positionMs
+            } catch (e: Exception) {
+                // ignore
+            }
+        }
+    }
+
+    private fun startPositionTracker() {
+        positionJob?.cancel()
+        positionJob = scope.launch {
+            while (true) {
+                val mp = mediaPlayer
+                android.util.Log.d("PlayerTracker", "Tracker loop: mp is null? ${mp == null}, isPlaying: ${_isPlaying.value}")
+                if (mp != null && _isPlaying.value) {
+                    try {
+                        val pos = mp.currentPosition.toLong()
+                        android.util.Log.d("PlayerTracker", "Position updated: $pos")
+                        _currentPositionMs.value = pos
+                    } catch (e: Exception) {
+                        android.util.Log.e("PlayerTracker", "Error reading position", e)
+                    }
+                }
+                kotlinx.coroutines.delay(250)
             }
         }
     }

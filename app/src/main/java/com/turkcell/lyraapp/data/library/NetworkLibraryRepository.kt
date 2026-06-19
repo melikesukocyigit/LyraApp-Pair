@@ -1,9 +1,13 @@
 package com.turkcell.lyraapp.data.library
 
+import android.content.Context
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.turkcell.lyraapp.data.network.LyraApiService
 import com.turkcell.lyraapp.data.network.PlaylistDto
 import com.turkcell.lyraapp.data.network.SongDto
 import com.turkcell.lyraapp.data.player.NowPlayingTrack
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -18,6 +22,7 @@ import javax.inject.Singleton
 
 @Singleton
 class NetworkLibraryRepository @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val apiService: LyraApiService
 ) : LibraryRepository {
 
@@ -25,13 +30,34 @@ class NetworkLibraryRepository @Inject constructor(
     override val playlists: StateFlow<List<Playlist>> = _playlists.asStateFlow()
 
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val sharedPrefs = context.getSharedPreferences("lyra_library", Context.MODE_PRIVATE)
+    private val gson = Gson()
 
     init {
         fetchPlaylists()
     }
 
+    private fun getStoredPlaylists(): List<Playlist> {
+        val json = sharedPrefs.getString("custom_playlists", null) ?: return emptyList()
+        return try {
+            val type = object : TypeToken<List<Playlist>>() {}.type
+            gson.fromJson(json, type)
+        } catch (e: Exception) {
+            android.util.Log.e("NetworkLibraryRepository", "getStoredPlaylists error", e)
+            emptyList()
+        }
+    }
+
+    private fun savePlaylistsLocally(list: List<Playlist>) {
+        val customOnly = list.filter { it.id.startsWith("pl-") }
+        val json = gson.toJson(customOnly)
+        sharedPrefs.edit().putString("custom_playlists", json).apply()
+    }
+
     private fun fetchPlaylists() {
         repositoryScope.launch {
+            val localCustom = getStoredPlaylists()
+            _playlists.value = localCustom
             try {
                 val response = apiService.getPlaylists()
                 val mapped = response.data.map { playlistDto ->
@@ -43,7 +69,7 @@ class NetworkLibraryRepository @Inject constructor(
                     val tracks = detail?.songs?.map { it.toDomain() } ?: emptyList()
                     playlistDto.toDomain(tracks)
                 }
-                _playlists.value = mapped
+                _playlists.value = localCustom + mapped
             } catch (e: Exception) {
                 // Fallback / log
             }
@@ -106,7 +132,9 @@ class NetworkLibraryRepository @Inject constructor(
             isPinned = false
         )
         _playlists.update { current ->
-            listOf(newPlaylist) + current
+            val updated = listOf(newPlaylist) + current
+            savePlaylistsLocally(updated)
+            updated
         }
         Result.success(newPlaylist)
     }
@@ -118,6 +146,7 @@ class NetworkLibraryRepository @Inject constructor(
             if (updated.size < current.size) {
                 found = true
             }
+            savePlaylistsLocally(updated)
             updated
         }
         if (found) {
