@@ -1,6 +1,8 @@
 package com.turkcell.lyraapp.data.network
 
 import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.Body
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -25,4 +27,29 @@ interface LyraApiService {
     suspend fun getPlaylistDetail(
         @Path("id") id: String
     ): PlaylistDetailResponse
+
+    @POST("api/v1/auth/otp/request")
+    suspend fun requestOtp(
+        @Body request: OtpRequest
+    ): OtpRequestResponse
+
+    @POST("api/v1/auth/otp/verify")
+    suspend fun verifyOtp(
+        @Body request: OtpVerifyRequest
+    ): OtpVerifyResponse
+
+    @POST("api/v1/auth/refresh")
+    suspend fun refresh(
+        @Body request: RefreshRequest
+    ): RefreshResponse
+
+    @POST("api/v1/auth/logout")
+    suspend fun logout(
+        @Body request: LogoutRequest
+    ): retrofit2.Response<Unit>
+
+    @POST("api/v1/me/update-informations")
+    suspend fun updateInformations(
+        @Body request: UpdateInfoRequest
+    ): UpdateInfoResponse
 }
