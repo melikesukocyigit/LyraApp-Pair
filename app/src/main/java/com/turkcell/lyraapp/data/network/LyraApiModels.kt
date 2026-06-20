@@ -50,3 +50,74 @@ data class PlaylistDetailDto(
 data class PlaylistDetailResponse(
     @SerializedName("data") val data: PlaylistDetailDto,
 )
+
+data class OtpRequest(
+    @SerializedName("phone") val phone: String,
+)
+
+data class OtpRequestData(
+    @SerializedName("sent") val sent: Boolean,
+    @SerializedName("firstTime") val firstTime: Boolean,
+)
+
+data class OtpRequestResponse(
+    @SerializedName("data") val data: OtpRequestData,
+)
+
+data class OtpVerifyRequest(
+    @SerializedName("phone") val phone: String,
+    @SerializedName("code") val code: String,
+)
+
+data class LyraUser(
+    @SerializedName("id") val id: String,
+    @SerializedName("phone") val phone: String,
+    @SerializedName("displayName") val displayName: String?,
+    @SerializedName("firstName") val firstName: String?,
+    @SerializedName("lastName") val lastName: String?,
+    @SerializedName("birthDate") val birthDate: String?,
+    @SerializedName("createdAt") val createdAt: String,
+    @SerializedName("profileCompleted") val profileCompleted: Boolean,
+)
+
+data class OtpVerifyData(
+    @SerializedName("user") val user: LyraUser,
+    @SerializedName("firstTime") val firstTime: Boolean,
+    @SerializedName("accessToken") val accessToken: String,
+    @SerializedName("refreshToken") val refreshToken: String,
+    @SerializedName("tokenType") val tokenType: String,
+    @SerializedName("expiresIn") val expiresIn: Int,
+)
+
+data class OtpVerifyResponse(
+    @SerializedName("data") val data: OtpVerifyData,
+)
+
+data class RefreshRequest(
+    @SerializedName("refreshToken") val refreshToken: String,
+)
+
+data class RefreshData(
+    @SerializedName("accessToken") val accessToken: String,
+    @SerializedName("refreshToken") val refreshToken: String,
+    @SerializedName("tokenType") val tokenType: String,
+    @SerializedName("expiresIn") val expiresIn: Int,
+)
+
+data class RefreshResponse(
+    @SerializedName("data") val data: RefreshData,
+)
+
+data class LogoutRequest(
+    @SerializedName("refreshToken") val refreshToken: String,
+)
+
+data class UpdateInfoRequest(
+    @SerializedName("firstName") val firstName: String,
+    @SerializedName("lastName") val lastName: String,
+    @SerializedName("birthDate") val birthDate: String,
+)
+
+data class UpdateInfoResponse(
+    @SerializedName("data") val data: LyraUser,
+)
