@@ -3,6 +3,8 @@ package com.turkcell.lyraapp.ui.navigation
 enum class LyraDestination(val route: String) {
     Login("login"),
     Register("register"),
+    Otp("otp/{phoneNumber}"),
+    CompleteProfile("complete_profile"),
     Home("home"),
     Search("search"),
     Library("library"),

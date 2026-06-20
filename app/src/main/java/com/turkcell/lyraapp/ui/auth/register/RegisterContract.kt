@@ -21,7 +21,7 @@ sealed interface RegisterIntent {
     data class LastNameChanged(val value: String) : RegisterIntent
     data class PhoneNumberChanged(val value: String) : RegisterIntent
     data class PasswordChanged(val value: String) : RegisterIntent
-    data class ConfirmPasswordChanged(val value: String) : RegisterIntent // EKLENDİ
+    data class ConfirmPasswordChanged(val value: String) : RegisterIntent
     data class TermsAcceptedChanged(val value: Boolean) : RegisterIntent
     data object TogglePasswordVisibility : RegisterIntent
     data object Submit : RegisterIntent
