@@ -80,7 +80,6 @@ fun RegisterScreen(
             )
             Spacer(Modifier.height(24.dp))
 
-            // Tek bir "Name" yerine ViewModel'a uyumlu Ad ve Soyad olarak ayırdık
             OutlinedTextField(
                 value = state.firstName,
                 onValueChange = { onIntent(RegisterIntent.FirstNameChanged(it)) },
@@ -98,8 +97,6 @@ fun RegisterScreen(
                 shape = RoundedCornerShape(12.dp)
             )
             Spacer(Modifier.height(14.dp))
-
-            // Email alanı Contract'ta olmadığı için kaldırıldı.
 
             OutlinedTextField(
                 value = state.phoneNumber,
@@ -136,8 +133,6 @@ fun RegisterScreen(
             )
             Spacer(Modifier.height(14.dp))
 
-            // Butonun aktif olması için kullanıcının sözleşmeyi kabul etmesi gerekiyordu (Contract'a göre).
-            // UI'a sözleşme Checkbox'ı eklendi:
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically

@@ -34,7 +34,7 @@ class RegisterViewModel @Inject constructor(
             is RegisterIntent.LastNameChanged -> updateForm { it.copy(lastName = intent.value) }
             is RegisterIntent.PhoneNumberChanged -> updateForm { it.copy(phoneNumber = intent.value) }
             is RegisterIntent.PasswordChanged -> updateForm { it.copy(password = intent.value) }
-            is RegisterIntent.ConfirmPasswordChanged -> updateForm { it.copy(confirmPassword = intent.value) } // DÜZELTİLDİ
+            is RegisterIntent.ConfirmPasswordChanged -> updateForm { it.copy(confirmPassword = intent.value) }
             is RegisterIntent.TermsAcceptedChanged -> updateForm { it.copy(isTermsAccepted = intent.value) }
             is RegisterIntent.TogglePasswordVisibility -> _uiState.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
             is RegisterIntent.Submit -> submit()
@@ -88,5 +88,5 @@ private fun RegisterUiState.isFormValid(): Boolean =
             lastName.isNotBlank() &&
             phoneNumber.length >= 10 &&
             password.length >= 6 &&
-            password == confirmPassword && // Şifrelerin eşleştiğinden emin oluyoruz
+            password == confirmPassword &&
             isTermsAccepted

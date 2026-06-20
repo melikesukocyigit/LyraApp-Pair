@@ -14,9 +14,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * Login ekranının MVI ViewModel'i.
- */
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val authRepository: AuthRepository,
@@ -31,10 +28,7 @@ class LoginViewModel @Inject constructor(
     fun onIntent(intent: LoginIntent) {
         when (intent) {
             is LoginIntent.PhoneNumberChanged -> updateForm { it.copy(phoneNumber = intent.value) }
-            is LoginIntent.PasswordChanged -> updateForm { it.copy(password = intent.value) }
-            is LoginIntent.TogglePasswordVisibility -> _uiState.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
             is LoginIntent.Submit -> submit()
-            is LoginIntent.RegisterClicked -> viewModelScope.launch { _effect.send(LoginEffect.NavigateToRegister) }
         }
     }
 
@@ -53,17 +47,11 @@ class LoginViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
             val result = authRepository.requestOtp(state.phoneNumber)
             _uiState.update { it.copy(isLoading = false) }
-
             result
-                .onSuccess { firstTime -> 
-                    _effect.send(LoginEffect.NavigateToHome) 
-                }
-                .onFailure { error ->
-                    _effect.send(LoginEffect.ShowError(error.message ?: "Giriş başarısız."))
-                }
+                .onSuccess { _effect.send(LoginEffect.NavigateToOtp(state.phoneNumber)) }
+                .onFailure { _effect.send(LoginEffect.ShowError(it.message ?: "Istek basarisiz.")) }
         }
     }
 }
 
-private fun LoginUiState.isFormValid(): Boolean =
-    phoneNumber.length >= 10
+private fun LoginUiState.isFormValid(): Boolean = phoneNumber.length >= 10
