@@ -36,14 +36,12 @@ class MainActivity : ComponentActivity() {
         requestNotificationPermissionIfNeeded()
         enableEdgeToEdge()
         setContent {
-
             val isDarkMode by themeRepository.isDarkMode.collectAsStateWithLifecycle()
-
+            val isLoggedIn by authRepository.isLoggedInFlow().collectAsStateWithLifecycle(initialValue = authRepository.isUserLoggedIn())
 
             LyraAppTheme(darkTheme = isDarkMode) {
                 LyraNavHost(
-                    isLoggedIn = authRepository.isUserLoggedIn(),
-                    // Tema değişim tetiklemesini artık repository üzerinden yapıyoruz
+                    isLoggedIn = isLoggedIn,
                     onThemeToggle = {
                         themeRepository.toggleTheme()
                     }

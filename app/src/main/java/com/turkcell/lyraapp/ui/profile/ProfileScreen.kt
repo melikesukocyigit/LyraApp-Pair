@@ -319,6 +319,12 @@ private fun SettingsSection(onIntent: (ProfileIntent) -> Unit) {
             label = "Yardim ve destek",
             onClick = { onIntent(ProfileIntent.OpenHelpAndSupport) },
         )
+        RowDivider()
+        SettingsRow(
+            icon = LyraIcons.Close,
+            label = "Oturumu kapat",
+            onClick = { onIntent(ProfileIntent.Logout) },
+        )
     }
 }
 

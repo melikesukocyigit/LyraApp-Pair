@@ -51,6 +51,11 @@ class ProfileViewModel @Inject constructor(
             ProfileIntent.OpenNotifications -> Unit
             ProfileIntent.OpenPrivacy -> Unit
             ProfileIntent.OpenHelpAndSupport -> Unit
+            ProfileIntent.Logout -> {
+                viewModelScope.launch {
+                    authRepository.logout()
+                }
+            }
         }
     }
 

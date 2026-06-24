@@ -2,6 +2,7 @@ package com.turkcell.lyraapp.data.network
 
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -67,5 +68,33 @@ interface LyraApiService {
     @POST("api/v1/me/plays")
     suspend fun recordPlay(
         @Body request: RecordPlayRequest
+    ): retrofit2.Response<Unit>
+
+    @GET("api/v1/me")
+    suspend fun getCurrentUser(): UserProfileResponse
+
+    @GET("api/v1/me/recommendations")
+    suspend fun getRecommendations(
+        @Query("limit") limit: Int = 20
+    ): SongsResponse
+
+    @GET("api/v1/me/playlists")
+    suspend fun getUserPlaylists(): PlaylistsResponse
+
+    @POST("api/v1/me/playlists")
+    suspend fun createPlaylist(
+        @Body request: CreatePlaylistRequest
+    ): PlaylistDetailResponse
+
+    @POST("api/v1/me/playlists/{id}/tracks")
+    suspend fun addTrackToPlaylist(
+        @Path("id") playlistId: String,
+        @Body request: AddTrackRequest
+    ): retrofit2.Response<Unit>
+
+    @DELETE("api/v1/me/playlists/{id}/tracks/{songId}")
+    suspend fun removeTrackFromPlaylist(
+        @Path("id") playlistId: String,
+        @Path("songId") songId: String
     ): retrofit2.Response<Unit>
 }

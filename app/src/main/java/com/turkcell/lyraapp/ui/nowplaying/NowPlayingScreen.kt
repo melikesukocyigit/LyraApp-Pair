@@ -27,6 +27,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -266,10 +269,23 @@ private fun ProgressSection(
     durationMs: Long,
     onSeek: (Float) -> Unit,
 ) {
+    var isDragging by remember { mutableStateOf(false) }
+    var dragProgress by remember { mutableStateOf(0f) }
+
+    val currentProgress = if (isDragging) dragProgress else progress
+    val displayPositionMs = if (isDragging) (durationMs * dragProgress).toLong() else currentPositionMs
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Slider(
-            value = progress,
-            onValueChange = onSeek,
+            value = currentProgress,
+            onValueChange = {
+                isDragging = true
+                dragProgress = it
+            },
+            onValueChangeFinished = {
+                isDragging = false
+                onSeek(dragProgress)
+            },
             modifier = Modifier.fillMaxWidth(),
             colors = SliderDefaults.colors(
                 thumbColor = Color(0xFFF48FB1),
@@ -282,7 +298,7 @@ private fun ProgressSection(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = formatMs(currentPositionMs),
+                text = formatMs(displayPositionMs),
                 style = MaterialTheme.typography.labelMedium,
                 color = Color.White.copy(alpha = 0.7f),
             )
