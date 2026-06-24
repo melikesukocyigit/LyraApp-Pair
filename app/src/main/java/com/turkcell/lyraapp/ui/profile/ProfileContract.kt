@@ -15,6 +15,7 @@ sealed interface ProfileIntent {
     data object OpenNotifications : ProfileIntent
     data object OpenPrivacy : ProfileIntent
     data object OpenHelpAndSupport : ProfileIntent
+    data object Logout : ProfileIntent
 }
 
 sealed interface ProfileEffect

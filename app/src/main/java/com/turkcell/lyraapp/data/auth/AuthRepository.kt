@@ -1,5 +1,7 @@
 package com.turkcell.lyraapp.data.auth
 
+import kotlinx.coroutines.flow.Flow
+
 /**
  * Kimlik doğrulama ve oturum yönetimi işlemlerinin tek soyutlama noktası.
  */
@@ -40,6 +42,11 @@ interface AuthRepository {
      * Kullanıcının halihazırda giriş yapıp yapmadığını kontrol eder.
      */
     fun isUserLoggedIn(): Boolean
+
+    /**
+     * Kullanıcının oturum açma durumunu gözlemleyen akış.
+     */
+    fun isLoggedInFlow(): Flow<Boolean>
 
     /**
      * Tercih edilen tema modunu (Dark/Light) kaydeder.

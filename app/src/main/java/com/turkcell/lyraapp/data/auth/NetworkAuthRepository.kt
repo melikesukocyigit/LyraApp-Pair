@@ -7,6 +7,7 @@ import com.turkcell.lyraapp.data.network.OtpVerifyRequest
 import com.turkcell.lyraapp.data.network.UpdateInfoRequest
 import com.turkcell.lyraapp.data.network.LogoutRequest
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -89,6 +90,10 @@ class NetworkAuthRepository @Inject constructor(
 
     override fun isUserLoggedIn(): Boolean {
         return tokenStorage.isLoggedIn()
+    }
+
+    override fun isLoggedInFlow(): Flow<Boolean> {
+        return tokenStorage.isLoggedInFlow
     }
 
     override fun setThemeDarkMode(isDark: Boolean) {

@@ -7,6 +7,10 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
 @Singleton
 class TokenStorage @Inject constructor(
     @ApplicationContext private val context: Context
@@ -22,6 +26,9 @@ class TokenStorage @Inject constructor(
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
+
+    private val _isLoggedInFlow = MutableStateFlow(isLoggedIn())
+    val isLoggedInFlow: StateFlow<Boolean> = _isLoggedInFlow.asStateFlow()
 
     fun getAccessToken(): String? = prefs.getString(KEY_ACCESS_TOKEN, null)
 
@@ -51,10 +58,12 @@ class TokenStorage @Inject constructor(
 
     fun setLoggedIn(loggedIn: Boolean) {
         prefs.edit().putBoolean(KEY_IS_LOGGED_IN, loggedIn).apply()
+        _isLoggedInFlow.value = loggedIn
     }
 
     fun clear() {
         prefs.edit().clear().apply()
+        _isLoggedInFlow.value = false
     }
 
     private companion object {
