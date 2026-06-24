@@ -3,6 +3,7 @@ package com.turkcell.lyraapp.ui.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.turkcell.lyraapp.data.auth.AuthRepository
+import com.turkcell.lyraapp.data.library.LibraryRepository
 import com.turkcell.lyraapp.data.theme.ThemeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -19,6 +20,7 @@ import javax.inject.Inject
 class ProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val themeRepository: ThemeRepository,
+    private val libraryRepository: LibraryRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -38,6 +40,11 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             themeRepository.isDarkMode.collect { isDark ->
                 _uiState.update { it.copy(isDarkMode = isDark) }
+            }
+        }
+        viewModelScope.launch {
+            libraryRepository.playlists.collect { list ->
+                _uiState.update { it.copy(playlistCount = list.size) }
             }
         }
         viewModelScope.launch {
