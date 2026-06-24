@@ -189,7 +189,7 @@ private fun FavoritesCoverSection(
         }
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = "Begenilen Sarkılar",
+                text = "Beğenilen Şarkılar",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = onBgColor,
@@ -244,7 +244,7 @@ private fun FavoritesActions(
                     modifier = Modifier.size(20.dp),
                 )
                 Text(
-                    text = "Cal",
+                    text = "Çal",
                     color = if (hasItems) accentOnColor else Color.Gray,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 15.sp,
@@ -261,7 +261,7 @@ private fun FavoritesActions(
         ) {
             Icon(
                 imageVector = LyraIcons.Shuffle,
-                contentDescription = "Karistir",
+                contentDescription = "Karıştır",
                 tint = if (hasItems) onSurfaceColor else Color.Gray,
                 modifier = Modifier.size(22.dp),
             )
@@ -276,7 +276,7 @@ private fun FavoritesActions(
         ) {
             Icon(
                 imageVector = LyraIcons.Download,
-                contentDescription = "Indir",
+                contentDescription = "İndir",
                 tint = onSurfaceColor,
                 modifier = Modifier.size(22.dp),
             )
@@ -336,7 +336,7 @@ private fun FavoriteTrackRow(
         IconButton(onClick = onToggleFavorite, modifier = Modifier.size(36.dp)) {
             Icon(
                 imageVector = LyraIcons.Favorite,
-                contentDescription = "Favoriden cikar",
+                contentDescription = "Favoriden çıkar",
                 tint = Color(0xFFFFB1C8),
                 modifier = Modifier.size(20.dp),
             )
@@ -344,7 +344,7 @@ private fun FavoriteTrackRow(
         IconButton(onClick = {}, modifier = Modifier.size(36.dp)) {
             Icon(
                 imageVector = LyraIcons.MoreVert,
-                contentDescription = "Diger secenekler",
+                contentDescription = "Diğer seçenekler",
                 tint = Color.Gray,
                 modifier = Modifier.size(20.dp),
             )
@@ -371,12 +371,12 @@ private fun EmptyFavoritesHint() {
                 modifier = Modifier.size(48.dp),
             )
             Text(
-                text = "Henuz hic sarki begenmediniz",
+                text = "Henüz hiç şarkı beğenmediniz",
                 color = Color.Gray,
                 style = MaterialTheme.typography.bodyMedium,
             )
             Text(
-                text = "Sarkilardaki kalp ikonuna tiklayin",
+                text = "Şarkılardaki kalp ikonuna tıklayın",
                 color = Color.Gray.copy(alpha = 0.6f),
                 style = MaterialTheme.typography.bodySmall,
             )

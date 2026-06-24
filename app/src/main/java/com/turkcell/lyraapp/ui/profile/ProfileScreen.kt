@@ -152,7 +152,7 @@ private fun ProfileHeader(
         Spacer(Modifier.height(4.dp))
 
         Text(
-            text = displayName.ifEmpty { "Kullanici" },
+            text = displayName.ifEmpty { "Kullanıcı" },
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
@@ -170,8 +170,8 @@ private fun ProfileHeader(
             horizontalArrangement = Arrangement.spacedBy(32.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            StatItem(value = playlistCount.toString(), label = "Calma listesi")
-            StatItem(value = "1.2B", label = "Takipci")
+            StatItem(value = playlistCount.toString(), label = "Çalma listesi")
+            StatItem(value = "1.2B", label = "Takipçi")
             StatItem(value = "348", label = "Takip")
         }
     }
@@ -206,7 +206,7 @@ private fun ThemeToggleSection(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
-            text = "Gorunum",
+            text = "Görünüm",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -220,7 +220,7 @@ private fun ThemeToggleSection(
                 .padding(4.dp),
         ) {
             ThemeToggleOption(
-                label = "Acik",
+                label = "Açık",
                 icon = LyraIcons.LightMode,
                 selected = !isDarkMode,
                 onClick = { if (isDarkMode) onToggle() },
@@ -291,14 +291,14 @@ private fun SettingsSection(onIntent: (ProfileIntent) -> Unit) {
         SettingsRow(
             icon = LyraIcons.Waveform,
             label = "Ses kalitesi",
-            trailingValue = "Yuksek",
+            trailingValue = "Yüksek",
             onClick = { onIntent(ProfileIntent.OpenSoundQuality) },
         )
         RowDivider()
         SettingsRow(
             icon = LyraIcons.Download,
-            label = "Cevrimdisi indirme",
-            trailingValue = "Acik",
+            label = "Çevrimdışı indirme",
+            trailingValue = "Açık",
             onClick = { onIntent(ProfileIntent.OpenOfflineDownload) },
         )
         RowDivider()
@@ -316,7 +316,7 @@ private fun SettingsSection(onIntent: (ProfileIntent) -> Unit) {
         RowDivider()
         SettingsRow(
             icon = LyraIcons.HelpOutline,
-            label = "Yardim ve destek",
+            label = "Yardım ve destek",
             onClick = { onIntent(ProfileIntent.OpenHelpAndSupport) },
         )
         RowDivider()

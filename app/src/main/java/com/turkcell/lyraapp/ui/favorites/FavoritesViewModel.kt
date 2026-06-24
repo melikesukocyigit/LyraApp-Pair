@@ -38,7 +38,7 @@ class FavoritesViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         tracks = tracks,
-                        trackCountText = "${tracks.size} sarki",
+                        trackCountText = "${tracks.size} şarkı",
                         totalDurationText = "$totalMin dk",
                     )
                 }
