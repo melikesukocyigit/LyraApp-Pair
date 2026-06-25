@@ -22,10 +22,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,13 +58,14 @@ fun PlaylistDetailRoute(
     viewModel: PlaylistDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
                 PlaylistDetailEffect.NavigateBack -> onNavigateBack()
                 PlaylistDetailEffect.NavigateToNowPlaying -> onNavigateToNowPlaying()
-                is PlaylistDetailEffect.ShowError -> { /* Hata yönetimi */ }
+                is PlaylistDetailEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
             }
         }
     }
@@ -68,6 +73,7 @@ fun PlaylistDetailRoute(
     PlaylistDetailScreen(
         state = uiState,
         onIntent = viewModel::onIntent,
+        snackbarHostState = snackbarHostState,
         modifier = modifier
     )
 }
@@ -77,15 +83,32 @@ fun PlaylistDetailRoute(
 fun PlaylistDetailScreen(
     state: PlaylistDetailUiState,
     onIntent: (PlaylistDetailIntent) -> Unit,
+    snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
 ) {
     val playlist = state.playlist
     val startColor = playlist?.artworkStartColor ?: 0xFF191114
     val endColor = playlist?.artworkEndColor ?: 0xFF191114
 
+    if (state.isAddTrackSheetVisible) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { onIntent(PlaylistDetailIntent.DismissAddTrackSheet) },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surface,
+        ) {
+            AddTrackSheetContent(
+                tracks = state.availableTracks,
+                isAddingTrack = state.isAddingTrack,
+                onAddTrack = { onIntent(PlaylistDetailIntent.AddTrackToPlaylist(it)) },
+            )
+        }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         if (state.isLoading) {
             Box(
@@ -126,9 +149,13 @@ fun PlaylistDetailScreen(
                     PlaylistActionsRow(
                         isDownloading = state.isDownloading,
                         isPlaying = state.isPlaying && playlist.tracks.any { it.id == state.currentTrack?.id },
+                        isPlaylistFavorited = state.isPlaylistFavorited,
+                        isOwnedByUser = playlist.isOwnedByUser && playlist.id != "downloads",
                         onPlayClick = { onIntent(PlaylistDetailIntent.PlayAll) },
                         onShuffleClick = { onIntent(PlaylistDetailIntent.ShufflePlay) },
-                        onDownloadClick = { onIntent(PlaylistDetailIntent.DownloadClick) }
+                        onDownloadClick = { onIntent(PlaylistDetailIntent.DownloadClick) },
+                        onFavoriteClick = { onIntent(PlaylistDetailIntent.TogglePlaylistFavorite) },
+                        onAddTrackClick = { onIntent(PlaylistDetailIntent.ShowAddTrackSheet) },
                     )
                 }
 
@@ -278,9 +305,13 @@ private fun PlaylistHeroSection(
 private fun PlaylistActionsRow(
     isDownloading: Boolean,
     isPlaying: Boolean,
+    isPlaylistFavorited: Boolean,
+    isOwnedByUser: Boolean,
     onPlayClick: () -> Unit,
     onShuffleClick: () -> Unit,
-    onDownloadClick: () -> Unit
+    onDownloadClick: () -> Unit,
+    onFavoriteClick: () -> Unit,
+    onAddTrackClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -289,11 +320,11 @@ private fun PlaylistActionsRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Sol Kısım: Beğen, İndir, Ekle
-        IconButton(onClick = {}) {
+        IconButton(onClick = onFavoriteClick) {
             Icon(
-                imageVector = LyraIcons.FavoriteOutlined,
+                imageVector = if (isPlaylistFavorited) LyraIcons.Favorite else LyraIcons.FavoriteOutlined,
                 contentDescription = "Çalma Listesini Beğen",
-                tint = MaterialTheme.colorScheme.onBackground
+                tint = if (isPlaylistFavorited) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
             )
         }
         IconButton(onClick = onDownloadClick) {
@@ -311,12 +342,14 @@ private fun PlaylistActionsRow(
                 )
             }
         }
-        IconButton(onClick = {}) {
-            Icon(
-                imageVector = LyraIcons.Add,
-                contentDescription = "Şarkı Ekle",
-                tint = MaterialTheme.colorScheme.onBackground
-            )
+        if (isOwnedByUser) {
+            IconButton(onClick = onAddTrackClick) {
+                Icon(
+                    imageVector = LyraIcons.Add,
+                    contentDescription = "Şarkı Ekle",
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
         }
 
         Spacer(modifier = Modifier.weight(1f))
@@ -444,4 +477,97 @@ private fun formatMs(ms: Long): String {
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
     return "%d:%02d".format(minutes, seconds)
+}
+
+@Composable
+private fun AddTrackSheetContent(
+    tracks: List<NowPlayingTrack>,
+    isAddingTrack: Boolean,
+    onAddTrack: (NowPlayingTrack) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 32.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "Şarkı Ekle",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (isAddingTrack) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+
+        if (tracks.isEmpty() && !isAddingTrack) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 48.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Eklenecek şarkı bulunamadı.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else {
+            LazyColumn {
+                items(tracks, key = { it.id }) { track ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(enabled = !isAddingTrack) { onAddTrack(track) }
+                            .padding(horizontal = 24.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(Color(track.startColor), Color(track.endColor))
+                                    )
+                                )
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = track.title,
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1
+                            )
+                            Text(
+                                text = track.subtitle,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1
+                            )
+                        }
+                        Icon(
+                            imageVector = LyraIcons.Add,
+                            contentDescription = "Ekle",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
 }

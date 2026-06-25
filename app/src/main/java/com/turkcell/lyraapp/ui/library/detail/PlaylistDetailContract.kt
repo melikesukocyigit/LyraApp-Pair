@@ -10,6 +10,10 @@ data class PlaylistDetailUiState(
     val currentTrack: NowPlayingTrack? = null,
     val isPlaying: Boolean = false,
     val favoritedTrackIds: Set<String> = emptySet(),
+    val isPlaylistFavorited: Boolean = false,
+    val isAddTrackSheetVisible: Boolean = false,
+    val availableTracks: List<NowPlayingTrack> = emptyList(),
+    val isAddingTrack: Boolean = false,
 )
 
 sealed interface PlaylistDetailIntent {
@@ -22,6 +26,10 @@ sealed interface PlaylistDetailIntent {
     data class RemoveTrack(val trackId: String) : PlaylistDetailIntent
     data object DownloadClick : PlaylistDetailIntent
     data object NavigateBack : PlaylistDetailIntent
+    data object TogglePlaylistFavorite : PlaylistDetailIntent
+    data object ShowAddTrackSheet : PlaylistDetailIntent
+    data object DismissAddTrackSheet : PlaylistDetailIntent
+    data class AddTrackToPlaylist(val track: NowPlayingTrack) : PlaylistDetailIntent
 }
 
 sealed interface PlaylistDetailEffect {

@@ -11,4 +11,5 @@ data class Playlist(
     val artworkEndColor: Long,
     val tracks: List<NowPlayingTrack>,
     val isPinned: Boolean = false,
+    val isOwnedByUser: Boolean = false,
 )
