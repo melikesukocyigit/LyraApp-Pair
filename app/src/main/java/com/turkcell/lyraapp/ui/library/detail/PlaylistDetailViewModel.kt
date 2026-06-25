@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.turkcell.lyraapp.data.favorites.FavoritesRepository
 import com.turkcell.lyraapp.data.library.LibraryRepository
 import com.turkcell.lyraapp.data.library.Playlist
+import com.turkcell.lyraapp.data.library.PlaylistFavoritesRepository
 import com.turkcell.lyraapp.data.player.NowPlayingTrack
 import com.turkcell.lyraapp.data.player.PlayerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,6 +25,7 @@ class PlaylistDetailViewModel @Inject constructor(
     private val libraryRepository: LibraryRepository,
     private val playerRepository: PlayerRepository,
     private val favoritesRepository: FavoritesRepository,
+    private val playlistFavoritesRepository: PlaylistFavoritesRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -63,6 +65,13 @@ class PlaylistDetailViewModel @Inject constructor(
                 _uiState.update { it.copy(favoritedTrackIds = favoritedIds) }
             }
         }
+
+        viewModelScope.launch {
+            playlistFavoritesRepository.favoritedPlaylistIds.collect { ids ->
+                val playlistId = _uiState.value.playlist?.id ?: savedStateHandle["playlistId"] ?: ""
+                _uiState.update { it.copy(isPlaylistFavorited = playlistId in ids) }
+            }
+        }
     }
 
     fun onIntent(intent: PlaylistDetailIntent) {
@@ -80,6 +89,12 @@ class PlaylistDetailViewModel @Inject constructor(
                     _effect.send(PlaylistDetailEffect.NavigateBack)
                 }
             }
+            PlaylistDetailIntent.TogglePlaylistFavorite -> togglePlaylistFavorite()
+            PlaylistDetailIntent.ShowAddTrackSheet -> showAddTrackSheet()
+            PlaylistDetailIntent.DismissAddTrackSheet -> {
+                _uiState.update { it.copy(isAddTrackSheetVisible = false) }
+            }
+            is PlaylistDetailIntent.AddTrackToPlaylist -> addTrackToPlaylist(intent.track)
         }
     }
 
@@ -154,6 +169,47 @@ class PlaylistDetailViewModel @Inject constructor(
                 } catch (ignored: Exception) {}
             }
             _uiState.update { it.copy(isDownloading = false) }
+        }
+    }
+
+    private fun togglePlaylistFavorite() {
+        val playlistId = _uiState.value.playlist?.id ?: return
+        playlistFavoritesRepository.togglePlaylistFavorite(playlistId)
+    }
+
+    private fun showAddTrackSheet() {
+        viewModelScope.launch {
+            val currentTrackIds = _uiState.value.playlist?.tracks?.map { it.id }?.toSet() ?: emptySet()
+            libraryRepository.getAvailableTracks()
+                .onSuccess { all ->
+                    val filtered = all.filter { it.id !in currentTrackIds }
+                    _uiState.update { it.copy(availableTracks = filtered, isAddTrackSheetVisible = true) }
+                }
+                .onFailure { error ->
+                    _effect.send(PlaylistDetailEffect.ShowError(error.message ?: "Şarkı listesi yüklenemedi."))
+                }
+        }
+    }
+
+    private fun addTrackToPlaylist(track: NowPlayingTrack) {
+        val playlistId = _uiState.value.playlist?.id ?: return
+        if (_uiState.value.isAddingTrack) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isAddingTrack = true) }
+            libraryRepository.addTrackToPlaylist(playlistId, track)
+                .onSuccess {
+                    _uiState.update { state ->
+                        state.copy(
+                            isAddingTrack = false,
+                            playlist = state.playlist?.copy(tracks = state.playlist.tracks + track),
+                            availableTracks = state.availableTracks.filter { it.id != track.id }
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    _uiState.update { it.copy(isAddingTrack = false) }
+                    _effect.send(PlaylistDetailEffect.ShowError(error.message ?: "Şarkı eklenemedi."))
+                }
         }
     }
 

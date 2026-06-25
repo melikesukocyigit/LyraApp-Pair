@@ -51,16 +51,18 @@ class NetworkLibraryRepository @Inject constructor(
                     emptyList()
                 }
 
+                val userPlaylistIds = userPlaylists.map { it.id }.toSet()
                 val allPlaylistsDto = (publicPlaylists + userPlaylists).distinctBy { it.id }
 
                 val mapped = allPlaylistsDto.map { playlistDto ->
+                    val isOwnedByUser = playlistDto.id in userPlaylistIds
                     val detail = try {
                         apiService.getPlaylistDetail(playlistDto.id).data
                     } catch (e: Exception) {
                         null
                     }
                     val tracks = detail?.songs?.map { it.toDomain() } ?: emptyList()
-                    playlistDto.toDomain(tracks)
+                    playlistDto.toDomain(tracks, isOwnedByUser)
                 }
 
                 _playlists.value = mapped
@@ -72,9 +74,10 @@ class NetworkLibraryRepository @Inject constructor(
 
     override suspend fun getPlaylistById(id: String): Result<Playlist> = withContext(Dispatchers.IO) {
         try {
+            val isOwnedByUser = _playlists.value.find { it.id == id }?.isOwnedByUser ?: false
             val response = apiService.getPlaylistDetail(id)
             val detail = response.data
-            val playlist = detail.toDomain()
+            val playlist = detail.toDomain(isOwnedByUser)
             _playlists.update { current ->
                 val exists = current.any { it.id == id }
                 if (exists) {
@@ -113,7 +116,7 @@ class NetworkLibraryRepository @Inject constructor(
             }
 
             val finalResponse = apiService.getPlaylistDetail(createdPlaylistId)
-            val finalPlaylist = finalResponse.data.toDomain()
+            val finalPlaylist = finalResponse.data.toDomain(isOwnedByUser = true)
 
             _playlists.update { current ->
                 listOf(finalPlaylist) + current
@@ -136,6 +139,33 @@ class NetworkLibraryRepository @Inject constructor(
         try {
             val response = apiService.getSongs(limit = 100)
             Result.success(response.data.map { it.toDomain() })
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun addTrackToPlaylist(playlistId: String, track: NowPlayingTrack): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.addTrackToPlaylist(playlistId, AddTrackRequest(track.id))
+            if (!response.isSuccessful) {
+                val errorMessage = when (response.code()) {
+                    409 -> "Bu şarkı zaten çalma listesinde bulunuyor."
+                    403 -> "Bu çalma listesine şarkı ekleyemezsiniz."
+                    404 -> "Çalma listesi veya şarkı bulunamadı."
+                    else -> "Şarkı eklenemedi."
+                }
+                return@withContext Result.failure(Exception(errorMessage))
+            }
+            _playlists.update { current ->
+                current.map { playlist ->
+                    if (playlist.id == playlistId) {
+                        playlist.copy(tracks = playlist.tracks + track)
+                    } else {
+                        playlist
+                    }
+                }
+            }
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -171,7 +201,10 @@ class NetworkLibraryRepository @Inject constructor(
         )
     }
 
-    private fun PlaylistDto.toDomain(tracks: List<NowPlayingTrack> = emptyList()): Playlist {
+    private fun PlaylistDto.toDomain(
+        tracks: List<NowPlayingTrack> = emptyList(),
+        isOwnedByUser: Boolean = false
+    ): Playlist {
         val colors = NowPlayingTrack.getColorsForId(id)
         return Playlist(
             id = id,
@@ -180,11 +213,12 @@ class NetworkLibraryRepository @Inject constructor(
             isPublic = true,
             artworkStartColor = colors.first,
             artworkEndColor = colors.second,
-            tracks = tracks
+            tracks = tracks,
+            isOwnedByUser = isOwnedByUser
         )
     }
 
-    private fun PlaylistDetailDto.toDomain(): Playlist {
+    private fun PlaylistDetailDto.toDomain(isOwnedByUser: Boolean = false): Playlist {
         val colors = NowPlayingTrack.getColorsForId(id)
         return Playlist(
             id = id,
@@ -193,7 +227,8 @@ class NetworkLibraryRepository @Inject constructor(
             isPublic = true,
             artworkStartColor = colors.first,
             artworkEndColor = colors.second,
-            tracks = songs.map { it.toDomain() }
+            tracks = songs.map { it.toDomain() },
+            isOwnedByUser = isOwnedByUser
         )
     }
 }

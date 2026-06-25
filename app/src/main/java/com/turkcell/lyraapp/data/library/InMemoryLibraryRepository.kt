@@ -27,7 +27,8 @@ class InMemoryLibraryRepository @Inject constructor() : LibraryRepository {
                 artworkStartColor = 0xFF8B6FB8,
                 artworkEndColor = 0xFF4A3D6B,
                 tracks = listOf(TRACK_1, TRACK_2, TRACK_6, TRACK_7, TRACK_3, TRACK_10),
-                isPinned = false
+                isPinned = false,
+                isOwnedByUser = true
             ),
             Playlist(
                 id = "pl-sabah-kahvesi",
@@ -37,7 +38,8 @@ class InMemoryLibraryRepository @Inject constructor() : LibraryRepository {
                 artworkStartColor = 0xFF7C83D9,
                 artworkEndColor = 0xFF3E4486,
                 tracks = listOf(TRACK_7, TRACK_4, TRACK_5, TRACK_9, TRACK_2),
-                isPinned = false
+                isPinned = false,
+                isOwnedByUser = true
             ),
             Playlist(
                 id = "pl-odaklan",
@@ -47,7 +49,8 @@ class InMemoryLibraryRepository @Inject constructor() : LibraryRepository {
                 artworkStartColor = 0xFF4AC2A8,
                 artworkEndColor = 0xFF1F6E5C,
                 tracks = listOf(TRACK_6, TRACK_4, TRACK_8, TRACK_3, TRACK_1),
-                isPinned = false
+                isPinned = false,
+                isOwnedByUser = true
             ),
             Playlist(
                 id = "pl-yaz-anilari",
@@ -57,7 +60,8 @@ class InMemoryLibraryRepository @Inject constructor() : LibraryRepository {
                 artworkStartColor = 0xFF5AAFC9,
                 artworkEndColor = 0xFF2A5F73,
                 tracks = listOf(TRACK_5, TRACK_7, TRACK_1, TRACK_9, TRACK_10),
-                isPinned = false
+                isPinned = false,
+                isOwnedByUser = true
             ),
             Playlist(
                 id = "pl-akustik-aksam",
@@ -67,7 +71,8 @@ class InMemoryLibraryRepository @Inject constructor() : LibraryRepository {
                 artworkStartColor = 0xFF9B5CC4,
                 artworkEndColor = 0xFF6B3494,
                 tracks = listOf(TRACK_10, TRACK_5, TRACK_7, TRACK_2),
-                isPinned = false
+                isPinned = false,
+                isOwnedByUser = true
             )
         )
     }
@@ -104,7 +109,8 @@ class InMemoryLibraryRepository @Inject constructor() : LibraryRepository {
             artworkStartColor = colors.first,
             artworkEndColor = colors.second,
             tracks = tracks,
-            isPinned = false
+            isPinned = false,
+            isOwnedByUser = true
         )
 
         _playlists.update { current ->
@@ -135,6 +141,21 @@ class InMemoryLibraryRepository @Inject constructor() : LibraryRepository {
     override suspend fun getAvailableTracks(): Result<List<NowPlayingTrack>> {
         delay(NETWORK_DELAY_MS / 2)
         return Result.success(ALL_TRACKS)
+    }
+
+    override suspend fun addTrackToPlaylist(playlistId: String, track: NowPlayingTrack): Result<Unit> {
+        delay(NETWORK_DELAY_MS)
+        val playlist = _playlists.value.find { it.id == playlistId }
+            ?: return Result.failure(NoSuchElementException("Çalma listesi bulunamadı."))
+        if (playlist.tracks.any { it.id == track.id }) {
+            return Result.failure(IllegalStateException("Bu şarkı zaten çalma listesinde bulunuyor."))
+        }
+        _playlists.update { current ->
+            current.map { p ->
+                if (p.id == playlistId) p.copy(tracks = p.tracks + track) else p
+            }
+        }
+        return Result.success(Unit)
     }
 
     override suspend fun removeTrackFromPlaylist(playlistId: String, songId: String): Result<Unit> {
