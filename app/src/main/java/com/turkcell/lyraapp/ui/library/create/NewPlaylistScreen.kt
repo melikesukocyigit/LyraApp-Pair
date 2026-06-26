@@ -327,19 +327,19 @@ private fun PrivacySettingRow(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Icon(
-                imageVector = LyraIcons.Globe,
+                imageVector = if (isPublic) LyraIcons.Globe else LyraIcons.Lock,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.size(24.dp)
             )
             Column {
                 Text(
-                    text = "Herkese açık",
+                    text = if (isPublic) "Herkese açık" else "Gizli",
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
-                    text = "Profilinde görünür",
+                    text = if (isPublic) "Profilinde görünür" else "Yalnızca sen görebilirsin",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
