@@ -17,11 +17,17 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): LyraDatabase =
-        Room.databaseBuilder(context, LyraDatabase::class.java, "lyra_db").build()
+        Room.databaseBuilder(context, LyraDatabase::class.java, "lyra_db")
+            .fallbackToDestructiveMigration()
+            .build()
 
     @Provides
     fun provideDownloadedSongDao(db: LyraDatabase) = db.downloadedSongDao()
 
     @Provides
     fun provideRecentlyPlayedDao(db: LyraDatabase) = db.recentlyPlayedDao()
+
+    @Provides
+    fun provideFavoritedSongDao(db: LyraDatabase): com.turkcell.lyraapp.data.local.FavoritedSongDao =
+        db.favoritedSongDao()
 }
