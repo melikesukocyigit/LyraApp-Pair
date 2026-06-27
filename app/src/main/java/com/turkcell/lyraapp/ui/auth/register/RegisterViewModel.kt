@@ -75,7 +75,7 @@ class RegisterViewModel @Inject constructor(
                 }
         }
     }
-
+//
     private fun String.calculateStrength(): Int {
         if (isEmpty()) return 0
         var score = 0
