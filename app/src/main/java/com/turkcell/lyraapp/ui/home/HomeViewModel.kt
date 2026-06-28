@@ -2,6 +2,8 @@ package com.turkcell.lyraapp.ui.home
 
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -22,6 +24,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 import java.util.Calendar
 import javax.inject.Inject
 
@@ -46,6 +50,7 @@ class HomeViewModel @Inject constructor(
         observeTheme()
         observeCurrentTrack()
         observeIsPlaying()
+        checkPremiumExpiry()
     }
 
     fun onIntent(intent: HomeIntent) {
@@ -66,17 +71,46 @@ class HomeViewModel @Inject constructor(
             is HomeIntent.PlaylistClicked -> viewModelScope.launch {
                 _effect.send(HomeEffect.NavigateToPlaylistDetail(intent.playlistId))
             }
+            is HomeIntent.DismissPremiumExpiryDialog -> _uiState.update {
+                it.copy(showPremiumExpiryDialog = false)
+            }
+            is HomeIntent.NavigateToPremiumFromDialog -> {
+                _uiState.update { it.copy(showPremiumExpiryDialog = false) }
+                viewModelScope.launch {
+                    _effect.send(HomeEffect.NavigateToPremiumPlans)
+                }
+            }
         }
     }
 
-    // --- HOCANIN VERİ YÜKLEME MANTIĞI ---
+    private fun isNetworkAvailable(): Boolean {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = cm.activeNetwork ?: return false
+        val caps = cm.getNetworkCapabilities(network) ?: return false
+        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+
     private fun loadFeed() {
         if (_uiState.value.isLoading) return
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
+
+            if (!isNetworkAvailable()) {
+                val offlineFeed = homeRepository.getOfflineFeed()
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        isOffline = true,
+                        offlineRecentlyPlayed = offlineFeed.recentlyPlayed,
+                        offlineDownloadedSongs = offlineFeed.downloadedSongs,
+                    )
+                }
+                return@launch
+            }
+
             val result = homeRepository.getHomeFeed()
-            _uiState.update { it.copy(isLoading = false) }
+            _uiState.update { it.copy(isLoading = false, isOffline = false) }
 
             result
                 .onSuccess { feed ->
@@ -157,6 +191,18 @@ class HomeViewModel @Inject constructor(
             context.startForegroundService(intent)
         } else {
             context.startService(intent)
+        }
+    }
+
+    private fun checkPremiumExpiry() {
+        val membership = authRepository.getMembership() ?: return
+        if (membership.status != "active") return
+        val daysLeft = runCatching {
+            val expires = OffsetDateTime.parse(membership.expiresAt)
+            ChronoUnit.DAYS.between(OffsetDateTime.now(), expires).toInt().coerceAtLeast(0)
+        }.getOrNull() ?: return
+        if (daysLeft <= 3) {
+            _uiState.update { it.copy(showPremiumExpiryDialog = true, premiumDaysLeft = daysLeft) }
         }
     }
 

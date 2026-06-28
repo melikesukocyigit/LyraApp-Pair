@@ -1,5 +1,6 @@
 package com.turkcell.lyraapp.ui.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -43,6 +44,7 @@ fun HomeRoute(
     onNavigateToLogin: () -> Unit,
     onNavigateToNowPlaying: () -> Unit,
     onNavigateToPlaylistDetail: (String) -> Unit,
+    onNavigateToPremiumPlans: () -> Unit,
     onToggleTheme: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
@@ -64,6 +66,7 @@ fun HomeRoute(
                 HomeEffect.NavigateToNowPlaying -> onNavigateToNowPlaying()
                 is HomeEffect.NavigateToPlaylistDetail -> onNavigateToPlaylistDetail(effect.playlistId)
                 is HomeEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
+                HomeEffect.NavigateToPremiumPlans -> onNavigateToPremiumPlans()
             }
         }
     }
@@ -119,32 +122,74 @@ fun HomeScreen(
                         NowPlayingTrack(id = rec.id, title = rec.title, subtitle = rec.subtitle, startColor = rec.artworkStartColor, endColor = rec.artworkEndColor)
                     }
 
-                    QuickPicksGrid(
-                        items = state.quickPicks,
-                        isDarkMode = state.isDarkMode,
-                        onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, quickPickTracks)) },
-                    )
+                    if (state.isOffline) {
+                        OfflineBanner(isDarkMode = state.isDarkMode)
 
-                    SectionHeader(title = "Son çalınanlar", isDarkMode = state.isDarkMode)
-                    RecentlyPlayedList(
-                        items = state.recentlyPlayed,
-                        isDarkMode = state.isDarkMode,
-                        onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, recentlyPlayedTracks)) },
-                    )
+                        if (state.offlineRecentlyPlayed.isNotEmpty()) {
+                            SectionHeader(title = "Son çalınanlar", isDarkMode = state.isDarkMode)
+                            val offlineRecentlyTracks = state.offlineRecentlyPlayed.map { rp ->
+                                NowPlayingTrack(id = rp.id, title = rp.title, subtitle = rp.subtitle, startColor = rp.artworkStartColor, endColor = rp.artworkEndColor)
+                            }
+                            RecentlyPlayedList(
+                                items = state.offlineRecentlyPlayed,
+                                isDarkMode = state.isDarkMode,
+                                onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, offlineRecentlyTracks)) },
+                            )
+                        }
 
-                    SectionHeader(title = "Önerilenler", isDarkMode = state.isDarkMode)
-                    RecommendationsList(
-                        items = state.recommendations,
-                        isDarkMode = state.isDarkMode,
-                        onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, recommendationsTracks)) },
-                    )
+                        if (state.offlineDownloadedSongs.isNotEmpty()) {
+                            SectionHeader(title = "İndirilenler", isDarkMode = state.isDarkMode)
+                            val offlineDownloadedTracks = state.offlineDownloadedSongs.map { qp ->
+                                NowPlayingTrack(id = qp.id, title = qp.title, subtitle = "", startColor = qp.artworkStartColor, endColor = qp.artworkEndColor)
+                            }
+                            QuickPicksGrid(
+                                items = state.offlineDownloadedSongs,
+                                isDarkMode = state.isDarkMode,
+                                onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, offlineDownloadedTracks)) },
+                            )
+                        }
 
-                    SectionHeader(title = "Senin için çalma listeleri", isDarkMode = state.isDarkMode)
-                    PlaylistsList(
-                        items = state.playlistsForYou,
-                        isDarkMode = state.isDarkMode,
-                        onPlaylistClick = { playlistId -> onIntent(HomeIntent.PlaylistClicked(playlistId)) },
-                    )
+                        if (state.offlineRecentlyPlayed.isEmpty() && state.offlineDownloadedSongs.isEmpty()) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(top = 64.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "Çevrimdisi içerik bulunamadi. Önce internet bağlantısı ile şarkı indirin.",
+                                    color = Color.Gray,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.padding(horizontal = 24.dp)
+                                )
+                            }
+                        }
+                    } else {
+                        QuickPicksGrid(
+                            items = state.quickPicks,
+                            isDarkMode = state.isDarkMode,
+                            onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, quickPickTracks)) },
+                        )
+
+                        SectionHeader(title = "Son çalınanlar", isDarkMode = state.isDarkMode)
+                        RecentlyPlayedList(
+                            items = state.recentlyPlayed,
+                            isDarkMode = state.isDarkMode,
+                            onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, recentlyPlayedTracks)) },
+                        )
+
+                        SectionHeader(title = "Önerilenler", isDarkMode = state.isDarkMode)
+                        RecommendationsList(
+                            items = state.recommendations,
+                            isDarkMode = state.isDarkMode,
+                            onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, recommendationsTracks)) },
+                        )
+
+                        SectionHeader(title = "Senin için çalma listeleri", isDarkMode = state.isDarkMode)
+                        PlaylistsList(
+                            items = state.playlistsForYou,
+                            isDarkMode = state.isDarkMode,
+                            onPlaylistClick = { playlistId -> onIntent(HomeIntent.PlaylistClicked(playlistId)) },
+                        )
+                    }
 
                     Spacer(Modifier.height(100.dp))
                 }
@@ -165,8 +210,141 @@ fun HomeScreen(
                         modifier = Modifier.align(Alignment.BottomCenter),
                     )
                 }
+
+                if (state.showPremiumExpiryDialog) {
+                    PremiumExpiryDialog(
+                        daysLeft = state.premiumDaysLeft,
+                        onSubscribeMonthly = { onIntent(HomeIntent.NavigateToPremiumFromDialog) },
+                        onRenewOneTime = { onIntent(HomeIntent.NavigateToPremiumFromDialog) },
+                        onDismiss = { onIntent(HomeIntent.DismissPremiumExpiryDialog) },
+                    )
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun PremiumExpiryDialog(
+    daysLeft: Int,
+    onSubscribeMonthly: () -> Unit,
+    onRenewOneTime: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.6f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 32.dp)
+                .clip(androidx.compose.foundation.shape.RoundedCornerShape(20.dp))
+                .background(Color(0xFF2A2020))
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                imageVector = LyraIcons.Clock,
+                contentDescription = null,
+                tint = Color(0xFFF4A0B5),
+                modifier = Modifier.size(40.dp),
+            )
+            Text(
+                text = "Premium'un $daysLeft gun sonra bitiyor",
+                style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+            Text(
+                text = "Tek seferlik erisiniz sona ermek uzere. Kesintisiz dinlemeye devam etmek icin yenile ya da aylik abonelige gec.",
+                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                color = Color.White.copy(alpha = 0.7f),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+            Spacer(Modifier.height(4.dp))
+            Button(
+                onClick = onSubscribeMonthly,
+                modifier = Modifier.fillMaxWidth(),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(50.dp),
+                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFF4A0B5),
+                ),
+            ) {
+                Icon(
+                    imageVector = LyraIcons.Refresh,
+                    contentDescription = null,
+                    tint = Color(0xFF5A1E35),
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "Aylik abonelige gec",
+                    color = Color(0xFF5A1E35),
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
+            }
+            Button(
+                onClick = onRenewOneTime,
+                modifier = Modifier.fillMaxWidth(),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(50.dp),
+                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                ),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.4f)),
+            ) {
+                Icon(
+                    imageVector = LyraIcons.Refresh,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "30 gun yenile",
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
+            }
+            TextButton(onClick = onDismiss) {
+                Text(
+                    text = "Daha sonra",
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun OfflineBanner(isDarkMode: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (isDarkMode) Color(0xFF2A2A2A) else Color(0xFFE0E0E0))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(
+            imageVector = LyraIcons.Download,
+            contentDescription = null,
+            tint = Color(0xFFF48FB1),
+            modifier = Modifier.size(18.dp)
+        )
+        Text(
+            text = "Çevrimdisi mod — yalnizca indirilen içerikler gösteriliyor",
+            color = Color.Gray,
+            style = MaterialTheme.typography.bodySmall,
+        )
     }
 }
 

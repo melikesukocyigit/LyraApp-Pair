@@ -10,15 +10,20 @@ import com.turkcell.lyraapp.data.player.NowPlayingTrack
 data class HomeUiState(
     val isLoading: Boolean = false,
     val isDarkMode: Boolean = true,
+    val isOffline: Boolean = false,
     val greeting: String = "",
     val userInitials: String = "",
     val quickPicks: List<QuickPick> = emptyList(),
     val recentlyPlayed: List<RecentlyPlayed> = emptyList(),
     val playlistsForYou: List<PlaylistForYou> = emptyList(),
     val recommendations: List<Recommendation> = emptyList(),
+    val offlineRecentlyPlayed: List<RecentlyPlayed> = emptyList(),
+    val offlineDownloadedSongs: List<QuickPick> = emptyList(),
     val currentTrack: NowPlayingTrack? = null,
     val isCurrentTrackFavorited: Boolean = false,
     val isPlaying: Boolean = false,
+    val showPremiumExpiryDialog: Boolean = false,
+    val premiumDaysLeft: Int = 0,
 )
 
 sealed interface HomeIntent {
@@ -31,6 +36,8 @@ sealed interface HomeIntent {
     data object ToggleFavorite : HomeIntent
     data object TogglePlayPause : HomeIntent
     data class PlaylistClicked(val playlistId: String) : HomeIntent
+    data object DismissPremiumExpiryDialog : HomeIntent
+    data object NavigateToPremiumFromDialog : HomeIntent
 }
 
 sealed interface HomeEffect {
@@ -38,4 +45,5 @@ sealed interface HomeEffect {
     data object NavigateToLogin : HomeEffect
     data object NavigateToNowPlaying : HomeEffect
     data class NavigateToPlaylistDetail(val playlistId: String) : HomeEffect
+    data object NavigateToPremiumPlans : HomeEffect
 }
