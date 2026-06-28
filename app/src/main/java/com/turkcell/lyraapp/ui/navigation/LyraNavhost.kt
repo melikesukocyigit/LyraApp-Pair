@@ -28,6 +28,7 @@ import com.turkcell.lyraapp.ui.library.LibraryRoute
 import com.turkcell.lyraapp.ui.library.create.NewPlaylistRoute
 import com.turkcell.lyraapp.ui.library.detail.PlaylistDetailRoute
 import com.turkcell.lyraapp.ui.premium.payment.PaymentRoute
+import com.turkcell.lyraapp.ui.premium.payment.PaymentSuccessRoute
 import com.turkcell.lyraapp.ui.premium.plans.PremiumPlansRoute
 import com.turkcell.lyraapp.ui.profile.ProfileRoute
 import com.turkcell.lyraapp.ui.nowplaying.NowPlayingRoute
@@ -224,11 +225,27 @@ fun LyraNavHost(
                 route = LyraDestination.Payment.route,
                 arguments = listOf(navArgument("planId") { type = NavType.StringType }),
             ) {
+                val planId = it.arguments?.getString("planId") ?: ""
                 PaymentRoute(
                     onNavigateBack = { navController.popBackStack() },
                     onPaymentSuccess = {
-                        navController.navigate(LyraDestination.Profile.route) {
-                            popUpTo(LyraDestination.Home.route)
+                        navController.navigate("payment_success/$planId") {
+                            popUpTo(LyraDestination.Payment.route) { inclusive = true }
+                        }
+                    },
+                )
+            }
+
+            composable(
+                route = LyraDestination.PaymentSuccess.route,
+                arguments = listOf(navArgument("planId") { type = NavType.StringType }),
+            ) {
+                val planId = it.arguments?.getString("planId") ?: ""
+                PaymentSuccessRoute(
+                    planId = planId,
+                    onGoHome = {
+                        navController.navigate(LyraDestination.Home.route) {
+                            popUpTo(LyraDestination.PremiumPlans.route) { inclusive = true }
                             launchSingleTop = true
                         }
                     },

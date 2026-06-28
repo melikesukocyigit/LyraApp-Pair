@@ -15,4 +15,5 @@ enum class LyraDestination(val route: String) {
     NewPlaylist("new_playlist"),
     PremiumPlans("premium_plans"),
     Payment("payment/{planId}"),
+    PaymentSuccess("payment_success/{planId}"),
 }

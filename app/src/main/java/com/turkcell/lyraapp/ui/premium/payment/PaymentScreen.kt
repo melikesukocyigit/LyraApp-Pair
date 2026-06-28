@@ -38,9 +38,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -249,8 +253,7 @@ private fun CardPreview(
                 )
             }
             Text(
-                text = cardNumber.ifBlank { "•••• •••• •••• ••••" }
-                    .padEnd(19, '•').take(19),
+                text = (cardNumber + "•".repeat(16)).take(16).chunked(4).joinToString(" "),
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.White,
                 letterSpacing = 2.sp,
@@ -281,7 +284,9 @@ private fun CardPreview(
                         letterSpacing = 1.sp,
                     )
                     Text(
-                        text = expiryDate.ifBlank { "AA/YY" },
+                        text = if (expiryDate.isBlank()) "AA/YYYY"
+                               else if (expiryDate.length > 2) "${expiryDate.take(2)}/${expiryDate.drop(2)}"
+                               else expiryDate,
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White,
                         fontWeight = FontWeight.SemiBold,
@@ -322,6 +327,7 @@ private fun CardForm(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            visualTransformation = CardNumberVisualTransformation,
             singleLine = true,
             colors = fieldColors,
         )
@@ -355,10 +361,11 @@ private fun CardForm(
                 OutlinedTextField(
                     value = expiryDate,
                     onValueChange = { onIntent(PaymentIntent.ExpiryDateChanged(it)) },
-                    placeholder = { Text("AA/YY") },
+                    placeholder = { Text("AA/YYYY") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    visualTransformation = ExpiryVisualTransformation,
                     singleLine = true,
                     colors = fieldColors,
                 )
@@ -469,3 +476,35 @@ private fun OrderSummary(
 }
 
 private val Int.sp get() = androidx.compose.ui.unit.TextUnit(this.toFloat(), androidx.compose.ui.unit.TextUnitType.Sp)
+
+private object CardNumberVisualTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val digits = text.text.take(16)
+        val formatted = digits.chunked(4).joinToString(" ")
+        val offsetMapping = object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int {
+                val spaces = ((offset - 1).coerceAtLeast(0)) / 4
+                return (offset + spaces).coerceAtMost(formatted.length)
+            }
+            override fun transformedToOriginal(offset: Int): Int {
+                val spaces = formatted.take(offset.coerceAtMost(formatted.length)).count { it == ' ' }
+                return (offset - spaces).coerceAtMost(digits.length)
+            }
+        }
+        return TransformedText(AnnotatedString(formatted), offsetMapping)
+    }
+}
+
+private object ExpiryVisualTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val digits = text.text.take(6)
+        val formatted = if (digits.length > 2) "${digits.take(2)}/${digits.drop(2)}" else digits
+        val offsetMapping = object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int =
+                if (offset <= 2) offset else (offset + 1).coerceAtMost(formatted.length)
+            override fun transformedToOriginal(offset: Int): Int =
+                if (offset <= 2) offset else (offset - 1).coerceAtMost(digits.length)
+        }
+        return TransformedText(AnnotatedString(formatted), offsetMapping)
+    }
+}

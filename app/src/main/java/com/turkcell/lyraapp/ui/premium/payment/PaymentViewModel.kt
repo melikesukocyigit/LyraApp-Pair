@@ -65,13 +65,9 @@ class PaymentViewModel @Inject constructor(
     }
 
     private fun PaymentUiState.isFormValid(): Boolean {
-        val rawNumber = cardNumber.replace(" ", "")
-        val expiryParts = expiryDate.split("/")
-        return rawNumber.length == 16 &&
+        return cardNumber.length == 16 &&
                 cardHolderName.isNotBlank() &&
-                expiryParts.size == 2 &&
-                expiryParts[0].length == 2 &&
-                expiryParts[1].length == 2 &&
+                expiryDate.length == 6 &&
                 cvc.length == 3
     }
 
@@ -80,9 +76,8 @@ class PaymentViewModel @Inject constructor(
         if (!state.isSubmitEnabled || state.isLoading) return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            val expiryParts = state.expiryDate.split("/")
-            val expMonth = expiryParts[0].toIntOrNull() ?: 0
-            val expYear = ("20" + expiryParts[1]).toIntOrNull() ?: 0
+            val expMonth = state.expiryDate.take(2).toIntOrNull() ?: 0
+            val expYear = state.expiryDate.drop(2).toIntOrNull() ?: 0
             premiumRepository.checkout(
                 planId = state.planId,
                 cardNumber = state.cardNumber,
@@ -105,12 +100,10 @@ class PaymentViewModel @Inject constructor(
     }
 
     private fun formatCardNumber(raw: String): String {
-        val digits = raw.replace(" ", "").take(16)
-        return digits.chunked(4).joinToString(" ")
+        return raw.replace(" ", "").take(16)
     }
 
     private fun formatExpiry(raw: String): String {
-        val digits = raw.replace("/", "").take(4)
-        return if (digits.length >= 2) "${digits.take(2)}/${digits.drop(2)}" else digits
+        return raw.replace("/", "").take(6)
     }
 }
