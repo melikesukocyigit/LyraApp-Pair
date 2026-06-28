@@ -38,7 +38,7 @@ class NetworkAuthRepository @Inject constructor(
         return try {
             val response = apiService.verifyOtp(OtpVerifyRequest(phone, code))
             val verifyData = response.data
-            
+
             tokenStorage.saveAccessToken(verifyData.accessToken)
             tokenStorage.saveRefreshToken(verifyData.refreshToken)
             tokenStorage.saveUserPhone(verifyData.user.phone)
@@ -47,7 +47,7 @@ class NetworkAuthRepository @Inject constructor(
             tokenStorage.setLoggedIn(true)
             currentUser = verifyData.user
 
-            Result.success(verifyData.firstTime)
+            Result.success(verifyData.firstTime || !verifyData.user.profileCompleted)
         } catch (e: Exception) {
             Result.failure(e)
         }
