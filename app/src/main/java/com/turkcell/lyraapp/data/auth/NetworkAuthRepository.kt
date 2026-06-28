@@ -2,6 +2,8 @@ package com.turkcell.lyraapp.data.auth
 
 import android.content.Context
 import com.turkcell.lyraapp.data.network.LyraApiService
+import com.turkcell.lyraapp.data.network.LyraUser
+import com.turkcell.lyraapp.data.network.MembershipDto
 import com.turkcell.lyraapp.data.network.OtpRequest
 import com.turkcell.lyraapp.data.network.OtpVerifyRequest
 import com.turkcell.lyraapp.data.network.UpdateInfoRequest
@@ -20,6 +22,9 @@ class NetworkAuthRepository @Inject constructor(
 
     private val prefs = context.getSharedPreferences("lyra_prefs", Context.MODE_PRIVATE)
 
+    @Volatile
+    private var currentUser: LyraUser? = null
+
     override suspend fun requestOtp(phone: String): Result<Boolean> {
         return try {
             val response = apiService.requestOtp(OtpRequest(phone))
@@ -33,15 +38,15 @@ class NetworkAuthRepository @Inject constructor(
         return try {
             val response = apiService.verifyOtp(OtpVerifyRequest(phone, code))
             val verifyData = response.data
-            
+
             tokenStorage.saveAccessToken(verifyData.accessToken)
             tokenStorage.saveRefreshToken(verifyData.refreshToken)
             tokenStorage.saveUserPhone(verifyData.user.phone)
             val displayName = verifyData.user.displayName ?: "${verifyData.user.firstName ?: ""} ${verifyData.user.lastName ?: ""}".trim()
             tokenStorage.saveUserName(displayName)
             tokenStorage.setLoggedIn(true)
-            
-            android.util.Log.d("AUTH", "firstTime=${verifyData.firstTime}, profileCompleted=${verifyData.user.profileCompleted}")
+            currentUser = verifyData.user
+
             Result.success(verifyData.firstTime || !verifyData.user.profileCompleted)
         } catch (e: Exception) {
             Result.failure(e)
@@ -80,6 +85,7 @@ class NetworkAuthRepository @Inject constructor(
         } catch (e: Exception) {
             Result.success(Unit)
         } finally {
+            currentUser = null
             tokenStorage.clear()
             tokenStorage.setLoggedIn(false)
         }
@@ -96,11 +102,14 @@ class NetworkAuthRepository @Inject constructor(
             val displayName = user.displayName ?: "${user.firstName ?: ""} ${user.lastName ?: ""}".trim()
             tokenStorage.saveUserName(displayName)
             tokenStorage.saveUserPhone(user.phone)
+            currentUser = user
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
+
+    override fun getMembership(): MembershipDto? = currentUser?.membership
 
     override fun isUserLoggedIn(): Boolean {
         return tokenStorage.isLoggedIn()
