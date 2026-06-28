@@ -41,7 +41,8 @@ class NetworkAuthRepository @Inject constructor(
             tokenStorage.saveUserName(displayName)
             tokenStorage.setLoggedIn(true)
             
-            Result.success(verifyData.firstTime)
+            android.util.Log.d("AUTH", "firstTime=${verifyData.firstTime}, profileCompleted=${verifyData.user.profileCompleted}")
+            Result.success(verifyData.firstTime || !verifyData.user.profileCompleted)
         } catch (e: Exception) {
             Result.failure(e)
         }

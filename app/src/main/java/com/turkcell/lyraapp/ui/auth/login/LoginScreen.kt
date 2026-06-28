@@ -70,7 +70,7 @@ fun LoginScreen(
             Spacer(Modifier.height(32.dp))
 
             Text(
-                text = "Tekrar hos geldin",
+                text = "Hos geldin",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground,
