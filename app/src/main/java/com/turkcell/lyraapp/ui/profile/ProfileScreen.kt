@@ -88,6 +88,7 @@ fun ProfileScreen(
                 playlistCount = state.playlistCount,
                 isPremium = state.isPremium,
                 membershipDaysLeft = state.membershipDaysLeft,
+                membershipType = state.membershipType,
             )
 
             Spacer(Modifier.height(16.dp))
@@ -148,6 +149,7 @@ private fun ProfileHeader(
     playlistCount: Int,
     isPremium: Boolean,
     membershipDaysLeft: Int?,
+    membershipType: String?,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -178,9 +180,14 @@ private fun ProfileHeader(
             color = MaterialTheme.colorScheme.onSurface,
         )
 
+        val membershipLabel = when (membershipType) {
+            "recurring" -> "Aylik Abonelik"
+            "oneTime" -> "30 Gun Erisim"
+            else -> "Premium"
+        }
         val premiumSubtitle = when {
-            isPremium && membershipDaysLeft != null -> "@lyrauser · Premium · $membershipDaysLeft gun"
-            isPremium -> "@lyrauser · Premium"
+            isPremium && membershipDaysLeft != null -> "@lyrauser · $membershipLabel · $membershipDaysLeft gun kaldi"
+            isPremium -> "@lyrauser · $membershipLabel"
             else -> "@lyrauser"
         }
         Text(
