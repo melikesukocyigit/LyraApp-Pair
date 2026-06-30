@@ -6,6 +6,13 @@ Uygulamanın temel amacı, kullanıcılara hem çevrimiçi (online) hem de tamam
 
 ---
 
+
+
+
+https://github.com/user-attachments/assets/5d3ae37c-5f12-43c0-aa37-cdb0fa72c732
+
+
+
 ## 📸 Ekran Görüntüleri & Akışlar
 
 | 1. Telefon Girişi (1/3) | 2. OTP Doğrulama (2/3) | 3. Bilgileri Tamamla (3/3) |
