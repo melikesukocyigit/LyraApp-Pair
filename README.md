@@ -6,10 +6,6 @@ Uygulamanın temel amacı, kullanıcılara hem çevrimiçi (online) hem de tamam
 
 ---
 
-
-
-
-
 ## 📸 Ekran Görüntüleri & Akışlar
 
 | 1. Telefon Girişi (1/3) | 2. OTP Doğrulama (2/3) | 3. Bilgileri Tamamla (3/3) |
@@ -38,7 +34,10 @@ Uygulamanın temel amacı, kullanıcılara hem çevrimiçi (online) hem de tamam
 
 Uygulamanın genel akışını, özelliklerini ve Room veritabanı (local cache) ile offline-first çalışma mantığının detaylı açıklamasını aşağıdaki tanıtım videosunda bulabilirsiniz:
 
-<video src="docs/videos/LyraApp-Pair.mp4" width="100%" controls></video>
+
+
+https://github.com/user-attachments/assets/54a74bfd-0304-4168-928b-6f8425007d22
+
 
 ---
 
