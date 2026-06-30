@@ -63,6 +63,14 @@ Kullanıcının beğendiği şarkılar yerel veritabanında (Room) saklanır ve 
 *   Şarkı oynatılmadan önce doğrudan stream url'si çekmek yerine `POST /api/v1/me/playback/next` ucu tetiklenir.
 *   Premium olmayan ücretsiz kullanıcılara sunucu tarafında her 3 şarkıda bir `type: "ad"` (reklam) dönülür. Reklam bittiğinde `/playback/ad-complete` raporlanır ve asıl şarkıya geçiş yapılır. Premium kullanıcılar reklam görmeden doğrudan müzik dinleyebilir.
 
+### 4. Çevrimdışı (Offline) Oynatma ve İndirme Yönetimi
+Uygulamanın internet bağlantısı yokken (örneğin uçak modunda) çalışabilmesi için özel bir yerel dosya tabanlı saklama mekanizması geliştirilmiştir:
+*   **Dosya Depolama:** Şarkılar indirildiğinde, ses dosyaları cihazın yerel depolama alanına `offline_songs/[song_id].wav` formatında kaydedilir.
+*   **Metadata Depolama:** İndirilen tüm şarkıların meta bilgileri (şarkı adı, sanatçı, süre vb.) `offline_songs/metadata.json` dosyası içerisine JSON dizisi olarak yazılır.
+*   **Uygulama Başlangıcı (Bootstrap):** Uygulama açılırken `InMemoryPlayerRepository`, bu `metadata.json` dosyasını okuyarak indirilen şarkıları belleğe yükler. Aynı zamanda yereldeki ses dosyası varlığını kontrol eder, eğer dosya manuel silinmişse listeyi otomatik temizler.
+*   **Sanal Çalma Listesi ("downloads"):** Kütüphane ekranındaki "İndirilen Şarkılar" öğesi, API'den bağımsız olarak her zaman görünürdür. Tıklandığında `"downloads"` kimliği ile çalma listesi detay ekranına yönlendirilir. Burada `PlaylistDetailViewModel`, API'ye gitmek yerine doğrudan yerel indirilenler akışını dinleyerek şarkıları listeler.
+*   **Oynatma Mantığı:** Bir şarkı oynatılmak istendiğinde, oynatıcı katmanı şarkının cihazda indirilip indirilmediğini kontrol eder. Eğer indirildiyse, uzaktaki URL yerine doğrudan yereldeki ses dosyasını oynatır.
+
 ---
 
 ## 📂 Proje Özellikleri (Features)
