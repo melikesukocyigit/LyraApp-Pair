@@ -28,6 +28,10 @@ Uygulamanın temel amacı, kullanıcılara hem çevrimiçi (online) hem de tamam
 | :---: | :---: |
 | ![Kart Ödeme Formu](docs/images/payment_screen.png) | ![Ödeme Başarılı](docs/images/payment_success_screen.png) |
 
+| 15. Çevrimdışı Ana Sayfa (Banner) | 16. Kütüphane (İndirilenler Girişi) | 17. İndirilen Şarkılar Listesi |
+| :---: | :---: | :---: |
+| ![Çevrimdışı Ana Sayfa](docs/images/offline_main_page.png) | ![Kütüphane Çevrimdışı](docs/images/offline_library.png) | ![İndirilen Şarkılar Listesi](docs/images/offline_downloaded_playlist.png) |
+
 ---
 
 ## 🎥 Proje Detayları & Room Database Mantığı Videosu
